@@ -18,9 +18,12 @@ namespace EtherPaper
         {
             string keyStorePath = args[0]; // path to the Ethereum keystore file
             string password = args[1]; // password associated with Ethereum keystore file
-            //string privateKeySavePath = args[2] ?? "private.txt"; // optional save path for private key file
-            string privateKeySavePath = "private.txt"; //TODO: temporary until optional arguments can be implemented
+            string privateKeySavePath = "private.txt"; // save location for the resulting private key file (can be overridden by optional argument)
             string privateKey; // unencrypted private key
+
+            // optional arguments
+            if (args.Length > 2)
+                privateKeySavePath = args[2];
 
             // decrypt private key from keystore
             privateKey = await ExtractPrivateKeyFromKeyStore(keyStorePath, password);
