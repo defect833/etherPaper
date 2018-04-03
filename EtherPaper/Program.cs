@@ -1,8 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using Nethereum.Web3.Accounts;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EtherPaper
@@ -25,8 +22,10 @@ namespace EtherPaper
             if (args.Length > 2)
                 privateKeySavePath = args[2];
 
+            string keyStoreEncryptedJson = await LoadJson(keyStorePath);
+
             // decrypt private key from keystore
-            privateKey = await ExtractPrivateKeyFromKeyStore(keyStorePath, password);
+            privateKey = ExtractPrivateKeyFromKeyStore(keyStoreEncryptedJson, password);
 
             // save private key to a new file
             //TODO: needs file creation safety checks
@@ -36,39 +35,26 @@ namespace EtherPaper
             }
         }
 
-
-        /// <summary>
-        /// Using a provided password, will decrypt and provide a private key from an Ethereum KeyStore file
-        /// </summary>
-        /// <param name="path">path to the keystore file</param>
-        /// <param name="password">password to decrypt the encrypted private key</param>
-        /// <returns>unencrypted private key</returns>
-        private static async Task<string> ExtractPrivateKeyFromKeyStore(string path, string password)
+        private static string ExtractPrivateKeyFromKeyStore(string keyStoreEncryptedJson, string password)
         {
+            var account = Account.LoadFromKeyStore(keyStoreEncryptedJson, password);
+
+            return account.PrivateKey;
+        }
+
+        private static async Task<string> LoadJson(string path)
+        {
+            string keyStoreEncryptedJson = string.Empty;
 
             if (File.Exists(path))
             {
-                using (FileStream fStream = File.OpenRead(path))
+                using (StreamReader r = new StreamReader(path))
                 {
-                    // read the byte contents of the file
-                    byte[] byteResult = new byte[fStream.Length];
-                    await fStream.ReadAsync(byteResult, 0, (int)fStream.Length);
-
-                    // convert contents to an ASCII formatted string
-                    string strResult = System.Text.Encoding.ASCII.GetString(byteResult);
-
-                    // parse the contents as JSON
-                    var json = JObject.Parse(strResult);
-                    foreach (var property in json.Properties())
-                    {
-                        Console.WriteLine("{0} - {1}", property.Name, property.Value);
-                    }
-
-                    return strResult; //TODO: placeholder returning keystore file contents as string, this should be the decrypted private key
+                    keyStoreEncryptedJson = await r.ReadToEndAsync();
                 }
             }
 
-            return null;
+            return keyStoreEncryptedJson;
         }
     }
 }
