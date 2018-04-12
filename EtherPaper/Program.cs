@@ -15,31 +15,36 @@ namespace EtherPaper
         {
             string keyStorePath = args[0]; // path to the Ethereum keystore file
             string password = args[1]; // password associated with Ethereum keystore file
-            string privateKeySavePath = "private.txt"; // save location for the resulting private key file (can be overridden by optional argument)
-            string privateKey; // unencrypted private key
+            string paperWalletPath = args.Length > 2 ? args[2] : ""; // save location for the resulting private key file (optional argument) defaults to current path
+            paperWalletPath = Path.Combine(paperWalletPath, "paperwallet.txt"); // adds filename to the provided path
+            PaperWallet paperWallet;
 
-            // optional arguments
-            if (args.Length > 2)
-                privateKeySavePath = args[2];
-
+            // gather keystore file contents as JSON
             string keyStoreEncryptedJson = await LoadJson(keyStorePath);
 
-            // decrypt private key from keystore
-            privateKey = ExtractPrivateKeyFromKeyStore(keyStoreEncryptedJson, password);
+            // retireve decrypted details from keystore
+            paperWallet = ExtractDetailsFromKeyStore(keyStoreEncryptedJson, password);
 
             // save private key to a new file
             //TODO: needs file creation safety checks
-            using (StreamWriter fWriter = File.CreateText(privateKeySavePath))
+            using (StreamWriter fWriter = File.CreateText(paperWalletPath))
             {
-                await fWriter.WriteLineAsync(privateKey);
+                await fWriter.WriteLineAsync(paperWallet.Address);
+                await fWriter.WriteLineAsync(paperWallet.PrivateKey);
             }
         }
 
-        private static string ExtractPrivateKeyFromKeyStore(string keyStoreEncryptedJson, string password)
+        private static PaperWallet ExtractDetailsFromKeyStore(string keyStoreEncryptedJson, string password)
         {
             var account = Account.LoadFromKeyStore(keyStoreEncryptedJson, password);
 
-            return account.PrivateKey;
+            PaperWallet pw = new PaperWallet()
+            {
+                PrivateKey = account.PrivateKey,
+                Address = account.Address
+            };
+
+            return pw;
         }
 
         private static async Task<string> LoadJson(string path)
