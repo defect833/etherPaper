@@ -29,7 +29,9 @@ namespace EtherPaper
             //TODO: needs file creation safety checks
             using (StreamWriter fWriter = File.CreateText(paperWalletPath))
             {
+                await fWriter.WriteLineAsync("Address:");
                 await fWriter.WriteLineAsync(paperWallet.Address);
+                await fWriter.WriteLineAsync("Private Key:");
                 await fWriter.WriteLineAsync(paperWallet.PrivateKey);
             }
         }
